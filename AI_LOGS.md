@@ -1,7 +1,5 @@
 # AI Logs
 
-This template is intentionally empty. During the assessment, record the actual complete interactions used.
-
 ## Interaction 1
 
 ### User Prompt

@@ -1,0 +1,15 @@
+SeatClass,Price
+Silver,₹200
+silver,200.00
+SILVER,200
+Gold,₹300
+GOLD,₹300.00
+Recliner,500
+Gold,
+Silver,-200
+VIP,₹800
+Gold,abc
+Recliner,500.50
+,300
+malformed row
+

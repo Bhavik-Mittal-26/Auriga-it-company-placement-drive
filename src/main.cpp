@@ -1,4 +1,5 @@
 #include "pricing_engine.h"
+#include "price_importer.h"
 
 #include <iostream>
 #include <string>
@@ -7,16 +8,22 @@ namespace {
 
 using cinema::Booking;
 using cinema::CinemaConfig;
+using cinema::ImportReport;
 using cinema::PricingEngine;
 using cinema::PricingError;
+using cinema::PriceImporter;
+using cinema::PriceImportError;
 using cinema::SeatTier;
 using cinema::format_rupees;
 
-CinemaConfig demonstration_config() {
+CinemaConfig demonstration_config(const ImportReport& import_report) {
     CinemaConfig config;
-    config.tiers[static_cast<std::size_t>(SeatTier::Silver)] = {20000, true};
-    config.tiers[static_cast<std::size_t>(SeatTier::Gold)] = {30000, true};
-    config.tiers[static_cast<std::size_t>(SeatTier::Recliner)] = {50000, true};
+    for (std::size_t index = 0; index < cinema::kSeatTierCount; ++index) {
+        if (!import_report.canonical_prices.present[index]) {
+            throw PriceImportError("Price list is missing a required seat tier.");
+        }
+        config.tiers[index] = {import_report.canonical_prices.prices_paisa[index], true};
+    }
     config.festival_discount_paisa = 5000;
     config.member_discount_basis_points = 1000;
     config.member_discount_cap_paisa = 10000;
@@ -41,14 +48,17 @@ void print_bill(const cinema::Bill& bill) {
 
 int main() {
     try {
-        const PricingEngine engine(demonstration_config());
+        const PriceImporter importer;
+        const ImportReport import_report = importer.import_file("data/prices.csv");
+        std::cout << cinema::format_import_report(import_report) << '\n';
+        const PricingEngine engine(demonstration_config(import_report));
         long long silver = 0;
         long long gold = 0;
         long long recliner = 0;
         int member = 0;
 
         std::cout << "Friday night at the multiplex\n"
-                  << "Prices: Silver ₹200.00, Gold ₹300.00, Recliner ₹500.00\n"
+                  << "Prices loaded from data/prices.csv\n"
                   << "Enter Silver, Gold, Recliner quantities and member flag (0/1): ";
         if (!(std::cin >> silver >> gold >> recliner >> member)) {
             std::cerr << "Invalid input. Expected four numbers.\n";
@@ -72,6 +82,9 @@ int main() {
         return 0;
     } catch (const PricingError& error) {
         std::cerr << "Booking error: " << error.what() << '\n';
+        return 1;
+    } catch (const PriceImportError& error) {
+        std::cerr << "Price import error: " << error.what() << '\n';
         return 1;
     }
 }

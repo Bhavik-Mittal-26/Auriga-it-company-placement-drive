@@ -1,0 +1,5 @@
+cinema
+pricing_tests
+*.o
+build/
+.vscode/
